@@ -4,14 +4,14 @@
 #include <TimeLib.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
-#include <PubSubClient.h>
 #include <EEPROM.h>
+#include <PubSubClient.h>
+#include <Mqttclass.h>
 #include "Shelf.h"
  
 const char ssid[] = "TP-LINK_BF33";  //  your network SSID (name)
 const char pass[] = "82447410";       // your network password
 const char* mqtt_server = "192.168.0.3";
-char msg[50];
 const int NTP_PACKET_SIZE = 48; // NTP time is in the first 48 bytes of message
 byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
 // NTP Servers:
@@ -33,8 +33,8 @@ const int timeZone = 2;     // Central European Time
 
 WiFiUDP Udp;
 WiFiClient espClient;
+Mqttclass mqttparser;
 
-PubSubClient client(espClient);
 unsigned int localPort = 8888;  // local port to listen for UDP packets
 
 void printDigits(int digits){
@@ -107,29 +107,6 @@ getNtpTime();
 }
 
 
-void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Create a random client ID
-    String clientId = "ESP8266Client-";
-    clientId += String(random(0xffff), HEX);
-    // Attempt to connect
-    if (client.connect(clientId.c_str())) {
-      Serial.println("connected");
-      // Once connected, publish an announcement...
-      client.publish("outTopic", "hello world");
-      // ... and resubscribe
-      client.subscribe("inTopic");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
-  }
-}
 
 
 void setup() {
@@ -178,10 +155,14 @@ WiFi.hostByName(ntpServerName, timeServer);
   Serial.print("Local port: ");
   Serial.println(Udp.localPort());
   Serial.println("waiting for sync");
-   client.setServer(mqtt_server, 1883);
+ mqttparser.client.setClient(espClient);
+   mqttparser.client.setServer(mqtt_server, 1883);
+  mqttparser.client.setCallback(mqttparser.callback);
  time_t Syncint = 0;
  setSyncInterval(16000000);
  setSyncProvider(getNtpTime);
+delay(1000);
+
 
 }
 time_t prevDisplay = 0; // when the digital clock was displayed
@@ -191,14 +172,14 @@ void loop() {
      prevDisplay = now();
      digitalClockDisplay();
   //shelf1.OpenShelf();
-   client.publish("outTopic", "viestiesplta");
-  delay(1000);
+  // mqttparser.client.publish("outTopic", "viestiesplta");
+
    }
  }
- if (!client.connected()) {
-    reconnect();
+ if (!mqttparser.client.connected()) {
+    mqttparser.reconnect();
   }
-  client.loop();
+  mqttparser.client.loop();
 
 
 }

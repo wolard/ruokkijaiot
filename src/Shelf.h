@@ -12,13 +12,15 @@ struct Feedtime {
 class Shelf
 {
  private:
+   
+ 
     int _Hour;  
     int _Minute;  
     int _pin;  
     Feedtime _ftim;
    
 public:  
-Feedtime ftime;
+
 
 Shelf( uint8_t ,Feedtime *ftime);
 
