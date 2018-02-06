@@ -7,6 +7,7 @@
 #include <EEPROM.h>
 #include <PubSubClient.h>
 #include <Mqttclass.h>
+
 #include "Shelf.h"
  
 const char ssid[] = "TP-LINK_BF33";  //  your network SSID (name)
@@ -52,11 +53,6 @@ static void digitalClockDisplay(){
   //printDigits(second());
 
 }
-
-
-
-
-
 
 void sendNTPpacket(IPAddress &address)
 {
@@ -110,6 +106,7 @@ getNtpTime();
 
 
 void setup() {
+ 
 Feedtime ftime;
   ftime.Hours=16;
 ftime.Minutes=30;
@@ -155,6 +152,8 @@ WiFi.hostByName(ntpServerName, timeServer);
   Serial.print("Local port: ");
   Serial.println(Udp.localPort());
   Serial.println("waiting for sync");
+
+
  mqttparser.client.setClient(espClient);
    mqttparser.client.setServer(mqtt_server, 1883);
   mqttparser.client.setCallback(mqttparser.callback);
