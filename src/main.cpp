@@ -7,7 +7,7 @@
 #include <EEPROM.h>
 #include <PubSubClient.h>
 #include <Mqttclass.h>
-
+#include <ArduinoJson.h>
 #include "Shelf.h"
  
 const char ssid[] = "TP-LINK_BF33";  //  your network SSID (name)
@@ -106,14 +106,21 @@ getNtpTime();
 
 
 void setup() {
- 
-Feedtime ftime;
-  ftime.Hours=16;
-ftime.Minutes=30;
+ DynamicJsonBuffer jsonBuffer;
+ String input =
+      "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+  JsonObject& root = jsonBuffer.parseObject(input);
+  String output;
+  root.printTo(output);
+Feedtime shelf1time;
+  shelf1time.Hours=16;
+shelf1time.Minutes=30;
 
-Shelf shelf1(D3,&ftime);
+Shelf shelf1(D3,&shelf1time);
  shelf1.InitShelf();
-
+Feedtime shelf2time;
+  shelf2time.Hours=12;
+shelf2time.Minutes=00;
  
 
  Serial.begin(9600);
@@ -121,16 +128,23 @@ Shelf shelf1(D3,&ftime);
   delay(2000);
 
  shelf1.InitShelf();
-// EEPROM.put(0,feedtime);
-//EEPROM.commit();
+ Feedtime eepromtime;;
 
- // EEPROM.get(0, ftime);
- int eeAddress=0;
- //eeAddress = sizeof(ftime);
- //  Serial.println(ftime.Hours);
- // Serial.println(ftime.Minutes);
-Serial.println(eeAddress);
  
+   int shelf1Address=0;
+ int shelf2Address;
+
+ shelf2Address += sizeof(shelf1time);
+//EEPROM.put(shelf2Address,shelf2time);
+//EEPROM.commit();
+ Serial.println(analogRead(A0));
+ EEPROM.get(shelf2Address, eepromtime);
+   Serial.println("from eeprom");
+ Serial.println(eepromtime.Hours);
+  Serial.println(eepromtime.Minutes);
+Serial.println("next eeprom address");
+//Serial.println(eeAddress);
+  Serial.println(output);
   Serial.println("TimeNTP Example");
   Serial.print("Connecting to ");
   
@@ -170,8 +184,27 @@ void loop() {
    if (now() != prevDisplay) { //update the display only if time has changed
      prevDisplay = now();
      digitalClockDisplay();
+     int val = analogRead(0);
+  val = map(val, 550, 680, 0, 100);
+  if (val<=0)
+  {
+    val=0;
+  }
+  else if (val>100)
+  {
+    val=100;
+  }
+ char msgBuffer[10];           // make sure this is big enough to hold your string
+    char* percentage;
+
+    
+
+    percentage = dtostrf(val, 3, 0, msgBuffer);
+
+
+  
   //shelf1.OpenShelf();
-  // mqttparser.client.publish("outTopic", "viestiesplta");
+   mqttparser.client.publish("ruokkija", percentage);
 
    }
  }
